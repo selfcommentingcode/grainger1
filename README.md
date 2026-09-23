@@ -67,7 +67,8 @@ Full details are in the sections below; this is the short version. Commands are
 shown for **Windows (PowerShell)** and **macOS / Linux (bash/zsh)**.
 
 1. Install the [prerequisites](#prerequisites): JDK 21, Node 18+, PostgreSQL 14+.
-2. Create the database:
+2. Create the database (one-time; if it already exists, skip — see
+   [Database setup](#database-setup)):
    ```bash
    createdb -U postgres productsdb
    ```
@@ -134,7 +135,7 @@ automatically on backend startup from
 [`backend/src/main/resources/schema.sql`](backend/src/main/resources/schema.sql)
 (idempotent `CREATE TABLE IF NOT EXISTS`).
 
-**1. Create the database** (pick one):
+**1. Create the database** — a **one-time** step (pick one):
 
 ```bash
 # Option A: createdb (PostgreSQL bin dir, e.g. C:\Program Files\PostgreSQL\18\bin)
@@ -143,6 +144,17 @@ createdb -U postgres productsdb
 # Option B: psql (or the "SQL Shell (psql)" Start-menu shortcut)
 psql -U postgres -c "CREATE DATABASE productsdb;"
 ```
+
+> **Already created it (e.g. you ran this before)?** Skip this step. Running it
+> again is harmless but prints `database "productsdb" already exists` and exits
+> with an error — that message just means the database is already there, not that
+> anything is broken. To check first, list your databases and look for
+> `productsdb`:
+> ```bash
+> psql -U postgres -l
+> ```
+> Your data (the `products` table and its rows) is preserved across restarts —
+> you never need to recreate the database.
 
 **2. Credentials.** The backend defaults to username `postgres` / password `postgres`.
 If your `postgres` password differs, either set env vars before starting the backend
