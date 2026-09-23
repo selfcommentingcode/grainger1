@@ -244,6 +244,44 @@ curl -X POST http://localhost:8080/api/products \
 curl http://localhost:8080/api/products          # -> [{"id":1,"name":"P1"}]
 ```
 
+## Troubleshooting
+
+**Backend fails to start with `Failed to execute database script` /
+`dataSourceScriptDatabaseInitializer`.** Despite the wording, this is almost
+always a **login failure, not a schema problem** — read further down the stack
+trace and you'll see the real cause:
+
+```
+Caused by: org.postgresql.util.PSQLException: FATAL: password authentication failed for user "postgres"
+```
+
+`schema.sql` is just the first thing that opens a DB connection on startup, so a
+bad password surfaces there first. It means the backend didn't get your Postgres
+password. Fix it by starting with the launcher, which loads `vault/secrets` for
+you:
+
+```powershell
+.\run-backend.ps1     # Windows
+```
+```bash
+./run-backend.sh      # macOS / Linux
+```
+
+If you start the backend directly with `gradlew bootRun` instead, set the
+password in that same terminal first (it is **not** read from `vault/secrets`
+automatically):
+
+```powershell
+$env:DB_PASSWORD = "your-postgres-password"    # Windows
+```
+```bash
+export DB_PASSWORD="your-postgres-password"     # macOS / Linux
+```
+
+Cloning this repo onto a new machine? `vault/secrets` holds a throwaway demo
+password that won't match your local Postgres — put your own password there (or
+in `DB_PASSWORD`) before starting.
+
 ## API tests (Postman / Newman)
 
 A Postman collection with **embedded tests** exercises both endpoints end-to-end
