@@ -1,0 +1,48 @@
+
+Goal
+	Provide a minimal end-to-end app you can start locally so we can  extend it during the live pairing: Frontend → Backend → Database. (Preferred stack listed below.)
+
+Minimum deliverable
+
+	A tiny Products app with:
+
+		Frontend
+			Simple UI that lists products and lets the user create a product.
+
+		Backend
+			APIs to list products and create a product.
+
+		Database
+			Postgres table products with:
+				id auto-generated primary key (integer/UUID)
+				name string, required
+
+	That’s it, no other fields required.
+
+Time & scope
+	Keep it minimal and runnable. We will build on top of this during the interview.
+
+Tech stack
+
+	Preferred: React (frontend) + Kotlin Spring Boot (backend)
+	 + Postgres (DB).
+
+ensure the README contains these headings (exact bullets help us start quickly):
+
+    Prerequisites — Node, JDK (version), Postgres/Docker, etc.
+
+    Database setup — migrations / SQL / docker-compose snippet / commands to create the products table.
+
+    Start backend — commands to run Spring Boot (or equivalent).
+
+    Start frontend — commands to run the React app (or equivalent).
+
+    Verify — one quick example: “Open http://localhost:3000, create a product named P1, and confirm it appears in the list.”
+
+    Notes — any deviations from the preferred stack and why.
+
+What not to do
+    Do not implement update/delete — create + list only.
+    Do not spend time on styling/CSS or production hardening.
+
+

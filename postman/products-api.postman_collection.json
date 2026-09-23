@@ -1,0 +1,220 @@
+{
+  "info": {
+    "_postman_id": "a1f7c3d2-9e44-4b21-8c6a-6f2b1d0e77aa",
+    "name": "Products API — E2E",
+    "description": "End-to-end demonstration of the Products API (Kotlin / Spring Boot backend).\n\nExercises the two endpoints and asserts behaviour with embedded tests:\n\n- GET  /api/products  — list all products\n- POST /api/products  — create a product ({ \"name\": \"P1\" })\n\nThe requests run in order and share state via collection variables, so the\nsuite is self-contained. It is written to be **baseline-relative** — it does\nnot assume the database is empty, so you can re-run it against a live DB.\n\nRun in Postman (import + Send each request), or headless with Newman:\n\n    npx newman run postman/products-api.postman_collection.json\n\nBase URL defaults to http://localhost:8080 (collection variable `baseUrl`).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. List products (baseline)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "let body;",
+              "pm.test('status is 200 OK', () => pm.response.to.have.status(200));",
+              "pm.test('Content-Type is application/json', () => {",
+              "  pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json');",
+              "});",
+              "pm.test('response body is a JSON array', () => {",
+              "  body = pm.response.json();",
+              "  pm.expect(Array.isArray(body)).to.be.true;",
+              "});",
+              "pm.test('responds in under 2s', () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+              "",
+              "// Record the starting product count so later assertions are relative,",
+              "// not dependent on an empty database.",
+              "pm.collectionVariables.set('baselineCount', (body || []).length);",
+              "console.log('baseline product count =', (body || []).length);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/products",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "products"]
+        },
+        "description": "List all products. Should return HTTP 200 and a JSON array."
+      },
+      "response": []
+    },
+    {
+      "name": "2. Create product 'P1'",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 201 Created', () => pm.response.to.have.status(201));",
+              "",
+              "const p = pm.response.json();",
+              "pm.test('body has a numeric id', () => {",
+              "  pm.expect(p).to.have.property('id');",
+              "  pm.expect(p.id).to.be.a('number');",
+              "});",
+              "pm.test(\"name equals 'P1'\", () => pm.expect(p.name).to.eql('P1'));",
+              "",
+              "// Remember the id so the final list check can find this exact product.",
+              "pm.collectionVariables.set('createdId', p.id);",
+              "console.log('created product id =', p.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"P1\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/products",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "products"]
+        },
+        "description": "Create a product named 'P1'. Should return HTTP 201 with the persisted product (id + name)."
+      },
+      "response": []
+    },
+    {
+      "name": "3. Create product — trims surrounding whitespace",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 201 Created', () => pm.response.to.have.status(201));",
+              "",
+              "const p = pm.response.json();",
+              "pm.test('body has a numeric id', () => pm.expect(p.id).to.be.a('number'));",
+              "pm.test(\"server trims name to 'Widget'\", () => pm.expect(p.name).to.eql('Widget'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"  Widget  \"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/products",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "products"]
+        },
+        "description": "Names are trimmed server-side. Sending '  Widget  ' should persist 'Widget'."
+      },
+      "response": []
+    },
+    {
+      "name": "4. Reject blank name (validation)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 400 Bad Request', () => pm.response.to.have.status(400));",
+              "pm.test('no product body is returned', () => {",
+              "  pm.expect(pm.response.text() || '').to.not.include('\"id\"');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"   \"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/products",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "products"]
+        },
+        "description": "A blank/whitespace-only name is rejected with HTTP 400 and nothing is persisted."
+      },
+      "response": []
+    },
+    {
+      "name": "5. List reflects the new products",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200 OK', () => pm.response.to.have.status(200));",
+              "",
+              "const list = pm.response.json();",
+              "pm.test('response body is a JSON array', () => pm.expect(Array.isArray(list)).to.be.true);",
+              "",
+              "const baseline = Number(pm.collectionVariables.get('baselineCount'));",
+              "pm.test('exactly two products added since baseline (P1 + Widget)', () => {",
+              "  pm.expect(list.length).to.eql(baseline + 2);",
+              "});",
+              "",
+              "const createdId = Number(pm.collectionVariables.get('createdId'));",
+              "pm.test(\"list contains the created 'P1' product\", () => {",
+              "  const found = list.find(x => x.id === createdId);",
+              "  pm.expect(found, 'product with id ' + createdId + ' present').to.exist;",
+              "  pm.expect(found.name).to.eql('P1');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/products",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "products"]
+        },
+        "description": "Re-list products and confirm the two creates above are reflected (blank name was rejected, so +2 not +3)."
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "baselineCount",
+      "value": "0",
+      "type": "string"
+    },
+    {
+      "key": "createdId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+flowchart LR
+    user(["User / Browser"])
+
+    subgraph FE["Frontend · React + Vite · :3000"]
+        app["App.jsx<br/>product list + create form"]
+    end
+
+    subgraph BE["Backend · Kotlin + Spring Boot · :8080"]
+        ctrl["ProductController<br/>REST: GET / POST /api/products"]
+        repo["ProductRepository<br/>Spring Data JPA"]
+        ent["Product entity<br/>@Entity → products"]
+    end
+
+    subgraph DB["Database · PostgreSQL · :5432"]
+        tbl[("productsdb<br/>products table")]
+    end
+
+    schema["schema.sql<br/>CREATE TABLE IF NOT EXISTS"]
+
+    user -->|"HTTP"| app
+    app -->|"fetch JSON over HTTP<br/>(CORS: localhost:3000 allowed)"| ctrl
+    ctrl --> repo
+    repo --> ent
+    repo -->|"JDBC"| tbl
+    schema -. "runs on backend startup" .-> tbl
